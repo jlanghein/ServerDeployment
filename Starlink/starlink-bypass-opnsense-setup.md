@@ -197,44 +197,20 @@ Record your current WireGuard setup:
 
 ### 6.3 Options for WireGuard with CGNAT
 
-#### Option A: Request Public IP from Starlink (If Available)
-- Some business plans or portability plans may offer public IPs
-- Contact Starlink support to inquire
+#### Option A: Use IPv6 (Recommended)
+- Starlink provides a **public IPv6 address** that can accept inbound connections
+- If your WireGuard peer also has IPv6 connectivity, simply update the endpoint
+- No VPS or additional services required
+- See Section 6.4 for detailed setup instructions
 
-#### Option B: Use a VPS as a Jump Server (Recommended)
-Set up a VPS with a public IP and create a reverse tunnel:
+#### Option B: Use a VPS as a Jump Server (Fallback)
+If IPv6 is not available on both ends, set up a VPS with a public IP and create a reverse tunnel:
 1. Get a cheap VPS (e.g., from Vultr, DigitalOcean, Linode)
 2. Set up WireGuard on the VPS
 3. Create a tunnel from your OPNsense to the VPS
 4. Route traffic through the VPS to your home network
 
-#### Option C: Use Cloudflare Tunnel
-- Free option for HTTP/HTTPS services
-- Does not work for UDP-based services like WireGuard directly
-
-#### Option D: Use a Dynamic DNS + Tailscale/ZeroTier
-- Use mesh VPN services that work with CGNAT
-- Tailscale or ZeroTier can establish connections despite CGNAT
-
-#### Option E: Use IPv6 (Recommended if both peers support it)
-- Starlink provides a **public IPv6 address** that can accept inbound connections
-- If your WireGuard peer also has IPv6 connectivity, simply update the endpoint
-- No VPS or additional services required
-- See Section 6.5 for detailed setup instructions
-
-### 6.4 If You Have a Public IP (Lucky!)
-If you're fortunate to have a public IP, configure port forwards:
-
-1. Go to **Firewall > NAT > Port Forward**
-2. Add a new rule:
-   - **Interface**: WAN
-   - **Protocol**: UDP
-   - **Destination port range**: Your WireGuard port (e.g., 51820)
-   - **Redirect target IP**: Your WireGuard server IP (OPNsense or internal server)
-   - **Redirect target port**: 51820
-3. Save and apply
-
-### 6.5 WireGuard over IPv6 Setup (Option E)
+### 6.4 WireGuard over IPv6 Setup (Option A)
 
 Since Starlink provides a public IPv6 address (`2605:59c8:6100:fd85:2e0:67ff:fe31:ab8a/64` in this setup), you can use IPv6 for WireGuard connections, bypassing CGNAT entirely.
 
@@ -242,7 +218,7 @@ Since Starlink provides a public IPv6 address (`2605:59c8:6100:fd85:2e0:67ff:fe3
 - Both OPNsense routers must have IPv6 connectivity
 - Remote peer must be able to reach IPv6 addresses
 
-#### 6.5.1 Configure Home OPNsense (Behind Starlink)
+#### 6.4.1 Configure Home OPNsense (Behind Starlink)
 
 1. **Verify WireGuard is listening on IPv6**
    - Go to **VPN > WireGuard > Instances**
@@ -257,7 +233,7 @@ Since Starlink provides a public IPv6 address (`2605:59c8:6100:fd85:2e0:67ff:fe3
      - Change TCP/IP Version to `IPv4+IPv6`
      - Save and Apply
 
-#### 6.5.2 Configure Remote Peer (Stately OPNsense)
+#### 6.4.2 Configure Remote Peer (Stately OPNsense)
 
 1. **Update the peer endpoint to use IPv6**
    - Go to **VPN > WireGuard > Peers**
@@ -274,7 +250,7 @@ Since Starlink provides a public IPv6 address (`2605:59c8:6100:fd85:2e0:67ff:fe3
    - Go to **VPN > WireGuard > General**
    - Toggle the service off and on, or click restart
 
-#### 6.5.3 Verify Connection
+#### 6.4.3 Verify Connection
 
 1. **Check handshake status**
    - Go to **VPN > WireGuard > Status** on either OPNsense
@@ -284,7 +260,23 @@ Since Starlink provides a public IPv6 address (`2605:59c8:6100:fd85:2e0:67ff:fe3
    - From Stately, ping the home WireGuard tunnel IP: `10.10.19.2`
    - From home, ping the Stately WireGuard tunnel IP
 
-#### 6.5.4 Handle Dynamic IPv6 Address (Optional)
+#### 6.4.3.1 Verified Connection Status
+
+**Office OPNsense (Home behind Starlink):**
+| Instance | Type | Name | Port | Peer Endpoint | Handshake | TX | RX |
+|----------|------|------|------|---------------|-----------|----|----|
+| wg1 | interface | backupoffice-dev | 51822 | - | - | - | - |
+| wg1 | peer | backup-office-peer | - | [2600:1700:2ed8:2e0:2e0:67ff:fe2f:6628]:20903 | 46s | 5.03 GB | 163.31 GB |
+
+**Stately OPNsense (Remote peer):**
+| Instance | Type | Name | Port | Peer Endpoint | Handshake | TX | RX |
+|----------|------|------|------|---------------|-----------|----|----|
+| wg2 | interface | backup-stately | 20903 | - | - | - | - |
+| wg2 | peer | Office-Peer-to-Peer | - | [2605:59c8:6100:fd85:2e0:67ff:fe31:ab8a]:51822 | 90s | 163.38 GB | 4.75 GB |
+
+> **Confirmed**: Both peers show recent handshakes and active data transfer over IPv6.
+
+#### 6.4.4 Handle Dynamic IPv6 Address (Optional)
 
 Starlink's DHCPv6 may change your IPv6 address over time. To handle this:
 
@@ -329,11 +321,11 @@ Starlink's DNS servers work fine, but you can use alternatives:
 ## Step 9: Test Everything
 
 ### 9.1 Checklist
-- [ ] OPNsense WAN has IP from Starlink
-- [ ] LAN devices can access internet
-- [ ] DNS resolution works
-- [ ] WireGuard VPN connects (via IPv6 or other CGNAT workaround)
-- [ ] WireGuard handshake successful (check VPN > WireGuard > Status)
+- [x] OPNsense WAN has IP from Starlink
+- [x] LAN devices can access internet
+- [x] DNS resolution works
+- [x] WireGuard VPN connects via IPv6
+- [x] WireGuard handshake successful (check VPN > WireGuard > Status)
 - [ ] All necessary services are accessible
 
 ### 9.2 Speed Test
@@ -362,10 +354,10 @@ Starlink's DNS servers work fine, but you can use alternatives:
 
 ### WireGuard Not Working
 - Confirm you're behind CGNAT (likely if IPv4 is 100.x.x.x)
-- **Recommended**: Use IPv6 for WireGuard endpoint (see Section 6.5)
+- **Recommended**: Use IPv6 for WireGuard endpoint (see Section 6.4)
 - Verify WAN firewall rule allows IPv4+IPv6 on port 51822
 - Check WireGuard status page for handshake errors
-- Implement one of the other CGNAT workaround solutions if IPv6 unavailable
+- Use VPS jump server as fallback if IPv6 unavailable (see Option B in Section 6.3)
 - Check firewall logs for blocked traffic
 
 ---

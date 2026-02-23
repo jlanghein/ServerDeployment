@@ -68,6 +68,15 @@ Record your current WireGuard setup:
 - Peer configurations
 - Allowed IPs
 
+### 1.6 Current OPNsense Interface Overview (Before Migration)
+| Interface | Device | Type   | IPv4            | IPv6                                      | Gateway       |
+|-----------|--------|--------|-----------------|-------------------------------------------|---------------|
+| WAN       | igb0   | DHCP   | 192.168.1.177/24| 2605:59c8:6301:f208:2e0:67ff:fe31:ab8a/64 | 192.168.1.1   |
+| LAN       | igb1   | Static | 10.10.20.1/24   | 2605:59c8:6301:f20c:2e0:67ff:fe31:ab8b/62 | -             |
+| wg1       | -      | -      | 10.10.19.2      | -                                         | -             |
+
+> WAN was receiving private IP from Comcast router (double NAT situation).
+
 ---
 
 ## Step 2: Set Starlink Router to Bypass Mode
@@ -148,6 +157,18 @@ Record your current WireGuard setup:
 2. Verify WAN interface shows an IP address
    - Starlink typically assigns CGNAT IPs (100.x.x.x range)
    - Some residential plans may get public IPs
+
+### 5.1.1 Actual Post-Migration Interface Overview
+| Interface | Device | Type   | IPv4              | IPv6                                      | Gateway       |
+|-----------|--------|--------|-------------------|-------------------------------------------|---------------|
+| WAN       | igb0   | DHCP   | 100.124.179.91/10 | 2605:59c8:6100:fd85:2e0:67ff:fe31:ab8a/64 | 100.64.0.1    |
+| LAN       | igb1   | Static | 10.10.20.1/24     | fe80::2e0:67ff:fe31:ab8b/64               | -             |
+| wg1       | -      | -      | 10.10.19.2        | -                                         | -             |
+
+**Confirmed:**
+- **IPv4**: CGNAT address (`100.124.179.91`) - inbound IPv4 connections blocked by Starlink
+- **IPv6**: Public address (`2605:59c8:6100:fd85:...`) - can accept inbound connections
+- **Gateway**: `100.64.0.1` (Starlink CGNAT gateway)
 
 ### 5.2 Test Internet Connectivity
 1. Go to **Interfaces > Diagnostics > Ping**

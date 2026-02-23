@@ -29,12 +29,39 @@ Before making any changes, document your existing OPNsense settings:
    - NAT rules
    - Static routes (if any)
 
-### 1.2 Note Your WireGuard Configuration
+### 1.2 Document Comcast Port Forwards (To Be Removed)
+The following port forwards exist on the Comcast router that will no longer apply:
+
+| Name          | Protocol | External Port | Internal Port | Internal IP  |
+|---------------|----------|---------------|---------------|--------------|
+| opensense-dev | TCP/UDP  | 51822         | 51822         | 10.1.10.30   |
+
+> **Note**: These forwards worked because Comcast provided a public IP. With Starlink CGNAT, 
+> direct port forwarding will not work without a workaround (see Step 6).
+
+### 1.3 Current OPNsense Firewall Rules
+
+#### LAN Rules
+| Protocol | Source  | Port | Destination | Port | Gateway | Description                          |
+|----------|---------|------|-------------|------|---------|--------------------------------------|
+| IPv4 *   | LAN net | *    | *           | *    | *       | Default allow LAN to any rule        |
+| IPv6 *   | LAN net | *    | *           | *    | *       | Default allow LAN IPv6 to any rule   |
+
+#### WAN Rules
+| Protocol   | Source | Port | Destination   | Port  | Gateway | Description                    |
+|------------|--------|------|---------------|-------|---------|--------------------------------|
+| IPv4+6 UDP | *      | *    | This Firewall | 51822 | *       | Allow wireguard from Stately   |
+
+> **Note**: The WAN rule "Allow wireguard from Stately" currently works because Comcast 
+> provides a public IP and forwards port 51822. With Starlink CGNAT, inbound connections 
+> to this port will not reach your firewall without a workaround.
+
+### 1.4 Note Your WireGuard Configuration
 Record your current WireGuard setup:
-- Listening port (commonly `51820`)
+- Listening port: `51822`
+- WAN firewall rule: "Allow wireguard from Stately" (UDP 51822)
 - Peer configurations
 - Allowed IPs
-- Any custom firewall rules for WireGuard
 
 ---
 

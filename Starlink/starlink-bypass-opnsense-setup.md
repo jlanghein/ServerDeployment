@@ -56,7 +56,12 @@ The following port forwards exist on the Comcast router that will no longer appl
 > provides a public IP and forwards port 51822. With Starlink CGNAT, inbound connections 
 > to this port will not reach your firewall without a workaround.
 
-### 1.4 Note Your WireGuard Configuration
+### 1.4 Current NAT Outbound Configuration
+- **Mode**: Automatic outbound NAT rule generation (no manual rules)
+
+> This is the default OPNsense setting and should continue to work with Starlink.
+
+### 1.5 Note Your WireGuard Configuration
 Record your current WireGuard setup:
 - Listening port: `51822`
 - WAN firewall rule: "Allow wireguard from Stately" (UDP 51822)

@@ -216,6 +216,12 @@ Set up a VPS with a public IP and create a reverse tunnel:
 - Use mesh VPN services that work with CGNAT
 - Tailscale or ZeroTier can establish connections despite CGNAT
 
+#### Option E: Use IPv6 (Recommended if both peers support it)
+- Starlink provides a **public IPv6 address** that can accept inbound connections
+- If your WireGuard peer also has IPv6 connectivity, simply update the endpoint
+- No VPS or additional services required
+- See Section 6.5 for detailed setup instructions
+
 ### 6.4 If You Have a Public IP (Lucky!)
 If you're fortunate to have a public IP, configure port forwards:
 
@@ -227,6 +233,71 @@ If you're fortunate to have a public IP, configure port forwards:
    - **Redirect target IP**: Your WireGuard server IP (OPNsense or internal server)
    - **Redirect target port**: 51820
 3. Save and apply
+
+### 6.5 WireGuard over IPv6 Setup (Option E)
+
+Since Starlink provides a public IPv6 address (`2605:59c8:6100:fd85:2e0:67ff:fe31:ab8a/64` in this setup), you can use IPv6 for WireGuard connections, bypassing CGNAT entirely.
+
+#### Prerequisites
+- Both OPNsense routers must have IPv6 connectivity
+- Remote peer must be able to reach IPv6 addresses
+
+#### 6.5.1 Configure Home OPNsense (Behind Starlink)
+
+1. **Verify WireGuard is listening on IPv6**
+   - Go to **VPN > WireGuard > Instances**
+   - WireGuard binds to all interfaces by default (IPv4 + IPv6)
+   - Confirm Listen Port is `51822`
+
+2. **Verify WAN firewall rule allows IPv6**
+   - Go to **Firewall > Rules > WAN**
+   - Check the "Allow wireguard from Stately" rule
+   - Ensure **TCP/IP Version** is set to `IPv4+IPv6` (not IPv4 only)
+   - If IPv4 only, edit the rule:
+     - Change TCP/IP Version to `IPv4+IPv6`
+     - Save and Apply
+
+#### 6.5.2 Configure Remote Peer (Stately OPNsense)
+
+1. **Update the peer endpoint to use IPv6**
+   - Go to **VPN > WireGuard > Peers**
+   - Edit the peer configuration for the home network
+   - Update **Endpoint Address**:
+     ```
+     Old: <previous Comcast IPv4 or hostname>
+     New: 2605:59c8:6100:fd85:2e0:67ff:fe31:ab8a
+     ```
+   - Keep **Endpoint Port**: `51822`
+   - Save and Apply
+
+2. **Restart WireGuard service** (optional but recommended)
+   - Go to **VPN > WireGuard > General**
+   - Toggle the service off and on, or click restart
+
+#### 6.5.3 Verify Connection
+
+1. **Check handshake status**
+   - Go to **VPN > WireGuard > Status** on either OPNsense
+   - Verify "Latest Handshake" shows a recent timestamp
+
+2. **Test connectivity**
+   - From Stately, ping the home WireGuard tunnel IP: `10.10.19.2`
+   - From home, ping the Stately WireGuard tunnel IP
+
+#### 6.5.4 Handle Dynamic IPv6 Address (Optional)
+
+Starlink's DHCPv6 may change your IPv6 address over time. To handle this:
+
+**Option 1: Dynamic DNS with IPv6 support**
+- Use a DDNS provider that supports IPv6 (Cloudflare, Hurricane Electric, dynv6.com)
+- Configure OPNsense DDNS client at **Services > Dynamic DNS**
+- Update the peer endpoint to use the DDNS hostname instead of the IP
+
+**Option 2: Monitor and update manually**
+- Check your IPv6 address periodically at **Interfaces > Overview**
+- Update the remote peer endpoint if it changes
+
+> **Note**: IPv6 addresses from Starlink tend to be relatively stable, but monitoring is recommended.
 
 ---
 
@@ -261,7 +332,8 @@ Starlink's DNS servers work fine, but you can use alternatives:
 - [ ] OPNsense WAN has IP from Starlink
 - [ ] LAN devices can access internet
 - [ ] DNS resolution works
-- [ ] WireGuard VPN connects (with CGNAT workaround if needed)
+- [ ] WireGuard VPN connects (via IPv6 or other CGNAT workaround)
+- [ ] WireGuard handshake successful (check VPN > WireGuard > Status)
 - [ ] All necessary services are accessible
 
 ### 9.2 Speed Test
@@ -289,8 +361,11 @@ Starlink's DNS servers work fine, but you can use alternatives:
 - Check OPNsense interface statistics for errors
 
 ### WireGuard Not Working
-- Confirm you're behind CGNAT (likely)
-- Implement one of the CGNAT workaround solutions
+- Confirm you're behind CGNAT (likely if IPv4 is 100.x.x.x)
+- **Recommended**: Use IPv6 for WireGuard endpoint (see Section 6.5)
+- Verify WAN firewall rule allows IPv4+IPv6 on port 51822
+- Check WireGuard status page for handshake errors
+- Implement one of the other CGNAT workaround solutions if IPv6 unavailable
 - Check firewall logs for blocked traffic
 
 ---
@@ -316,7 +391,7 @@ Even in bypass mode, you can access Starlink dish statistics:
 2. ✅ Enable Bypass Mode in Starlink app
 3. ✅ Connect Starlink router to OPNsense WAN
 4. ✅ Configure OPNsense WAN for DHCP
-5. ✅ Address CGNAT limitations for inbound connections
+5. ✅ Address CGNAT limitations for inbound connections (use IPv6 for WireGuard)
 6. ✅ Test all services
 
 ---

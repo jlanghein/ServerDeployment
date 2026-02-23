@@ -50,7 +50,7 @@ Use this method if you cannot access the Starlink app or the router is unrespons
 
 ### Locate the Reset Button
 
-The Gen 3 router has a reset button on the bottom of the unit.
+The Gen 3 router has a reset button located **between the two Ethernet ports** on the back of the unit.
 
 ### Steps
 
@@ -58,7 +58,7 @@ The Gen 3 router has a reset button on the bottom of the unit.
    - The router should be connected to the dish and receiving power
 
 2. **Locate the reset button**
-   - Look on the bottom of the router for a small pinhole or recessed button
+   - Find the small pinhole button between the two Ethernet ports
 
 3. **Press and hold the reset button**
    - Use a paperclip or SIM ejector tool
